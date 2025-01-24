@@ -7,8 +7,6 @@ import { button as buttonStyles } from "@heroui/theme";
 
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
-import { GithubIcon } from "@/components/icons";
-import { Select, SelectItem } from "@heroui/select";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { abbreviateTokenAddress } from "@/lib/utils";
 import { RPC_URL, connection } from "@/providers/RPCService";
@@ -19,7 +17,7 @@ export default function Home() {
   const [balance, setBalance] = useState<number>(0);
   
   useEffect(() => {
-    if (!publicKey) return;
+    if (!connection || !publicKey) return;
 
     connection.getBalance(publicKey).then((value) => {
       setBalance(value);
