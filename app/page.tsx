@@ -39,31 +39,31 @@ export default function Home() {
         <div className="flex flex-col lg:col-span-3 gap-3 border-2 border-gray-200 rounded-md px-4 py-6">
           <h2 className="text-2xl font-bold">Wallet Details</h2>
           <div className="grid grid-cols-1 gap-1 items-center">
-            <label className="text-gray-400">Wallet Address:</label>
+            <p className="text-gray-400">Wallet Address:</p>
             <p className="text-lg hidden sm:block">{publicKey?.toBase58() || 'No wallet connected'}</p>
             <p className="text-lg sm:hidden">{abbreviateTokenAddress(publicKey?.toBase58() || '') || 'No wallet connected'}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 items-center">
-            <label className="text-gray-400 sm:col-span-4">SOL Balance:</label>
+            <p className="text-gray-400 sm:col-span-4">SOL Balance:</p>
             <p className="sm:col-span-8 text-lg">0.00 SOL</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 items-center">
-            <label className="text-gray-400 sm:col-span-4">USD Balance:</label>
+            <p className="text-gray-400 sm:col-span-4">USD Balance:</p>
             <p className="sm:col-span-8 text-lg">0.00 USD</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 items-center">
-            <label className="text-gray-400 sm:col-span-4">Blocked Status:</label>
+            <p className="text-gray-400 sm:col-span-4">Blocked Status:</p>
             <p className="sm:col-span-8 text-red-500 text-lg">Blocked</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 items-center">
-            <label className="text-gray-400 sm:col-span-4">Blocked Time:</label>
+            <p className="text-gray-400 sm:col-span-4">Blocked Time:</p>
             <p className="sm:col-span-8 text-lg">2025-01-23 10:00:00</p>
           </div>
         </div>
         <div className="flex flex-col lg:col-span-2 gap-3 border-2 border-gray-200 rounded-md px-4 py-6">
           <h2 className="text-2xl font-bold">Blocked Wallet</h2>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-1 items-center mb-1">
-            <label className="text-gray-400 sm:col-span-4">Block Interval:</label>
+            <p className="text-gray-400 sm:col-span-4">Block Interval:</p>
             <div className="sm:col-span-8">
               <select className="py-2 px-4 rounded-md min-w-[150px]">
                 <option value="24">24 hours</option>

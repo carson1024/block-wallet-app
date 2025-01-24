@@ -6,6 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { abbreviateTokenAddress } from "@/lib/utils";
 import { FiMinusCircle } from "react-icons/fi";
 import toast from "react-hot-toast";
+import { Button } from "@heroui/button";
 
 //handle wallet balance fixed to 2 decimal numbers without rounding
 export function toFixed(num: number, fixed: number): string {
@@ -33,15 +34,15 @@ export const WalletProfile = () => {
           {abbreviateTokenAddress(publicKey ? publicKey.toBase58() : '')}
         </div>
       </div>
-      <div
+      <Button
         className="mx-auto flex gap-4 items-center hover:bg-gray-700 px-4 py-2 cursor-pointer"
-        onClick={handleDisconnect}
+        onPress={handleDisconnect}
       >
         <div className="">
           <FiMinusCircle className="text-white" />
         </div>
         <div>Disconnect Wallet</div>
-      </div>
+      </Button>
     </>
   );
 };

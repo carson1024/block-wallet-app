@@ -9,24 +9,23 @@ import numeral from "numeral";
 TimeAgo.addDefaultLocale(en);
 
 const splitDecimals = (text: string, decimals: number) => {
-  return { text, decimals }
-}
+  return { text, decimals };
+};
 
 const parseSmallDecimal = (tokens: number) => {
-  if(tokens === 0) return splitDecimals(numeral(0).format("0.00a"), 0)
-  
+  if (tokens === 0) return splitDecimals(numeral(0).format("0.00a"), 0);
+
   const decimals = -Math.floor(Math.log(tokens) / Math.log(10) + 1);
-  const n = (tokens * 10 ** (decimals + 4)).toFixed(0)
-  
-  return splitDecimals(n.toString(), decimals)
-}
+  const n = (tokens * 10 ** (decimals + 4)).toFixed(0);
+
+  return splitDecimals(n.toString(), decimals);
+};
 
 export const formatTokens = (tokens: number) => {
-  return tokens / 1000000000 > 0.1 ? 
-  splitDecimals(numeral(tokens / 1000000000).format("0.00a"), 0)
-  : 
-  parseSmallDecimal(tokens / 1000000000);
-}
+  return tokens / 1000000000 > 0.1
+    ? splitDecimals(numeral(tokens / 1000000000).format("0.00a"), 0)
+    : parseSmallDecimal(tokens / 1000000000);
+};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
