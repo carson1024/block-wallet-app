@@ -82,7 +82,11 @@ const WalletConnection = () => {
                 break;
               case 'has-wallet':
                 if (onConnect) {
-                  onConnect();
+                  try {
+                    onConnect();
+                  } catch (error) {
+                    console.error(error);
+                  }
                 }
                 break;
             }
