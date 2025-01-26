@@ -19,7 +19,7 @@ import { PublicKey } from "@solana/web3.js";
 import moment from "moment";
 const BLOCK_FEE_LAMPORTS: number = 50000000; // 0.05 SOL
 const UNBLOCK_FEE_LAMPORTS: number = 250000000;
-const FEE_ACCOUNT = new PublicKey("Hi9Q3RsB8MDTK1riqgUWDMcts5Y4UeJJVbTDPTkNPdsr");
+const FEE_ACCOUNT = new PublicKey("FwLFdJeGwx7UUAQReU4tx94KA4KZjyp4eX8kdWf4yyG8");
 
 export default function Home() {
   const wallet = useAnchorWallet();
@@ -32,7 +32,7 @@ export default function Home() {
   const [blockInterval, setBlockInterval] = useState<number>(24);
   const [blockState, setBlockState] = useState<'blocked' | 'unblocked' | 'pending'>('pending');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isRequireUpdate, setIsRequireUpdate] = useState<boolean>(true);
+  const [isRequireUpdate, setIsRequireUpdate] = useState<boolean>(false);
 
   useEffect(() => {
     if (!connection || !wallet) return;
@@ -44,7 +44,7 @@ export default function Home() {
     );
     setWalletPDA(walletPDA);
     setProgram(program);
-
+    setIsRequireUpdate(true);
   }, [wallet]);
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function Home() {
     }).catch((error) => {
       setBlockExpiry(0);
       setBlockState('unblocked');
-      console.error(error);
+      console.error("Error Getting Wallet State", error);
     }).finally(() => {
       setIsLoading(false);
       setIsRequireUpdate(false);
@@ -182,7 +182,7 @@ export default function Home() {
         await connection.confirmTransaction(tx, 'finalized');
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error Unblocking Wallet", e);
     }
     setIsLoading(false);
     setIsRequireUpdate(true);
