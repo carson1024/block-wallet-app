@@ -8,6 +8,29 @@ import numeral from "numeral";
 
 TimeAgo.addDefaultLocale(en);
 
+export const getRemainingTimeString = (seconds: number) => {
+  const days = Math.floor(seconds / (24 * 60 * 60));
+  const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+  const minutes = Math.floor((seconds % (60 * 60)) / 60);
+  const remainingSeconds = seconds % 60;
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (remainingSeconds > 0) parts.push(`${remainingSeconds}s`);
+
+  return parts.join(' ');
+};
+
+export const parseLamports = (lamports: number) => {
+  return (lamports / 1000000000);
+};
+
+export const formatDecimals = (value: number) => {
+  return (value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const splitDecimals = (text: string, decimals: number) => {
   return { text, decimals };
 };
