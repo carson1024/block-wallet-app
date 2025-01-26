@@ -8,7 +8,8 @@ import numeral from "numeral";
 
 TimeAgo.addDefaultLocale(en);
 
-export const getRemainingTimeString = (seconds: number) => {
+export const getRemainingTimeString = (mili: number) => {
+  const seconds = Math.floor(mili / 1000);
   const days = Math.floor(seconds / (24 * 60 * 60));
   const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
   const minutes = Math.floor((seconds % (60 * 60)) / 60);

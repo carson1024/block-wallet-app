@@ -16,8 +16,7 @@ import { BlockWallet } from "@/idl/block_wallet";
 import { getProgram } from "@/providers/RPCService";
 import { formatDecimals, parseLamports } from "@/lib/utils";
 import { PublicKey } from "@solana/web3.js";
-import { set } from "@coral-xyz/anchor/dist/cjs/utils/features";
-
+import moment from "moment";
 const BLOCK_FEE_LAMPORTS: number = 50000000; // 0.05 SOL
 const UNBLOCK_FEE_LAMPORTS: number = 250000000;
 const FEE_ACCOUNT = new PublicKey("Hi9Q3RsB8MDTK1riqgUWDMcts5Y4UeJJVbTDPTkNPdsr");
@@ -32,7 +31,8 @@ export default function Home() {
   const [blockRemaining, setBlockRemaining] = useState<number>(0);
   const [blockInterval, setBlockInterval] = useState<number>(24);
   const [blockState, setBlockState] = useState<'blocked' | 'unblocked' | 'pending'>('pending');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRequireUpdate, setIsRequireUpdate] = useState<boolean>(true);
 
   useEffect(() => {
     if (!connection || !wallet) return;
@@ -45,13 +45,22 @@ export default function Home() {
     setWalletPDA(walletPDA);
     setProgram(program);
 
+  }, [wallet]);
+
+  useEffect(() => {
+    if (!program || !walletPDA || !wallet || !isRequireUpdate) return;
+    let interval: NodeJS.Timeout | null = null;
+    setBlockRemaining(0);
+    setBlockState('pending');
+    console.log("Getting Wallet State...");
+    setIsLoading(true);
+
     connection.getBalance(wallet.publicKey).then((value) => {
       setBalance(value);
       fetch(`https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd`)
         .then((response) => response.json())
         .then((data) => {
           setBalanceUSD(data.solana.usd * parseLamports(value));
-          setIsLoading(false);
         })
         .catch((error) => {
           setBalanceUSD(-1);
@@ -60,25 +69,20 @@ export default function Home() {
     }).catch((error) => {
       // console.error(error);
     });
-  }, [wallet]);
 
-  useEffect(() => {
-    if (!program || !walletPDA || !wallet) return;
-    let interval: NodeJS.Timeout | null = null;
-    setBlockRemaining(0);
-    setBlockState('pending');
     program.account.wallet.fetch(walletPDA).then((value) => {
-      console.log("Wallet State", value);
-      setBlockExpiry(value.blockExpiry);
-      if (value.blockExpiry > new Date().getTime()) {
-        setBlockRemaining(value.blockExpiry - new Date().getTime());
+      const expiry = value.blockExpiry.toNumber() * 1000;
+      // console.log("Wallet State", value, expiry, new Date().getTime());
+      setBlockExpiry(expiry);
+      if (expiry > new Date().getTime()) {
+        setBlockRemaining(expiry - new Date().getTime());
         setBlockState('blocked');
       } else {
         setBlockState('unblocked');
       }
       interval = setInterval(() => {
-        if (value.blockExpiry > new Date().getTime()) {
-          setBlockRemaining(value.blockExpiry - new Date().getTime());
+        if (expiry > new Date().getTime()) {
+          setBlockRemaining(expiry - new Date().getTime());
           setBlockState('blocked');
         }else if (interval) {
           setBlockRemaining(0);
@@ -89,45 +93,99 @@ export default function Home() {
     }).catch((error) => {
       setBlockExpiry(0);
       setBlockState('unblocked');
-      // console.error(error);
+      console.error(error);
+    }).finally(() => {
+      setIsLoading(false);
+      setIsRequireUpdate(false);
     });
     return () => {
       interval && clearInterval(interval);
     };
-  }, [program, walletPDA, wallet]);
+  }, [program, walletPDA, wallet, isRequireUpdate]);
 
-  const handleBlockWallet = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleBlockWallet = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!program || !walletPDA || !wallet) return;
+
     setIsLoading(true);
-    program.methods.blockWallet(new BN(blockInterval * 60 * 60)).accounts({
-      user: wallet.publicKey,
-      feeAccount: FEE_ACCOUNT,
-    }).rpc().then((value) => {
-      console.log("Block Wallet", value);
-    }).catch((error) => {
-      console.error(error);
-    }).finally(() => {
-      setIsLoading(false);
-    });
+    try {
+      const accountInfo = await connection.getAccountInfo(walletPDA);
+      
+      // console.log("Account Info", accountInfo);
+      if (!accountInfo) {
+        // If account doesn't exist, send both initialize and block instructions
+        const tx = await program.methods.initialize(FEE_ACCOUNT)
+          .accounts({
+            user: wallet.publicKey,
+          })
+          .postInstructions([
+            await program.methods.blockWallet(new BN(blockInterval * 60 * 60))
+              .accounts({
+                user: wallet.publicKey,
+                feeAccount: FEE_ACCOUNT,
+              })
+              .instruction()
+          ])
+          .rpc();
+        await connection.confirmTransaction(tx, 'finalized');
+      } else {
+        // If account exists, just send block instruction
+        const tx = await program.methods.blockWallet(new BN(blockInterval * 60 * 60))
+          .accounts({
+            user: wallet.publicKey,
+            feeAccount: FEE_ACCOUNT,
+          })
+          .rpc();
+        await connection.confirmTransaction(tx, 'finalized');
+      }
+    } catch (e) {
+      console.error("Error Blocking Wallet", e);
+    }
+    setIsLoading(false);
+    setIsRequireUpdate(true);
   }
 
-  const handleUnblockWallet = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleUnblockWallet = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!program || !walletPDA || !wallet) return;
+
     setIsLoading(true);
-    program.methods.unblockWallet().accounts({
-      user: wallet.publicKey,
-      feeAccount: FEE_ACCOUNT,
-    }).rpc().then((value) => {
-      console.log("Block Wallet", value);
-    }).catch((error) => {
-      console.error(error);
-    }).finally(() => {
-      setIsLoading(false);
-    });
+    try {
+      const accountInfo = await connection.getAccountInfo(walletPDA);
+      
+      if (!accountInfo) {
+        // If account doesn't exist, send both initialize and block instructions
+        const tx = await program.methods.initialize(FEE_ACCOUNT)
+          .accounts({
+            user: wallet.publicKey,
+          })
+          .postInstructions([
+            await program.methods.unblockWallet()
+              .accounts({
+                user: wallet.publicKey,
+                feeAccount: FEE_ACCOUNT,
+              })
+              .instruction()
+          ])
+          .rpc();
+        await connection.confirmTransaction(tx, 'finalized');
+      } else {
+        // If account exists, just send block instruction
+        const tx = await program.methods.unblockWallet()
+          .accounts({
+            user: wallet.publicKey,
+            feeAccount: FEE_ACCOUNT,
+          })
+          .rpc();
+        await connection.confirmTransaction(tx, 'finalized');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsLoading(false);
+    setIsRequireUpdate(true);
   }
 
   return (
@@ -182,7 +240,7 @@ export default function Home() {
             <p className="text-gray-400 sm:col-span-4">Blocked Time:</p>
             {
               blockExpiry > new Date().getTime() ? (
-                <p className="sm:col-span-8 text-lg">{new Date(blockExpiry).toLocaleString()}</p>
+                <p className="sm:col-span-8 text-lg">{moment(blockExpiry).format('YYYY-MM-DD HH:mm:ss')}</p>
               ) : (
                 <p className="sm:col-span-8 text-lg">---</p>
               )
