@@ -32,7 +32,7 @@ export default function Home() {
   const [blockInterval, setBlockInterval] = useState<number>(24);
   const [blockState, setBlockState] = useState<'blocked' | 'unblocked' | 'pending'>('pending');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isRequireUpdate, setIsRequireUpdate] = useState<boolean>(false);
+  const [notifyUpdate, setNotifyUpdate] = useState<boolean>(false);
 
   useEffect(() => {
     if (!connection || !wallet) return;
@@ -44,11 +44,10 @@ export default function Home() {
     );
     setWalletPDA(walletPDA);
     setProgram(program);
-    setIsRequireUpdate(true);
   }, [wallet]);
 
   useEffect(() => {
-    if (!program || !walletPDA || !wallet || !isRequireUpdate) return;
+    if (!program || !walletPDA || !wallet) return;
     let interval: NodeJS.Timeout | null = null;
     setBlockRemaining(0);
     setBlockState('pending');
@@ -96,12 +95,11 @@ export default function Home() {
       console.error("Error Getting Wallet State", error);
     }).finally(() => {
       setIsLoading(false);
-      setIsRequireUpdate(false);
     });
     return () => {
       interval && clearInterval(interval);
     };
-  }, [program, walletPDA, wallet, isRequireUpdate]);
+  }, [program, walletPDA, wallet, notifyUpdate]);
 
   const handleBlockWallet = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -143,7 +141,7 @@ export default function Home() {
       console.error("Error Blocking Wallet", e);
     }
     setIsLoading(false);
-    setIsRequireUpdate(true);
+    setNotifyUpdate(!notifyUpdate);
   }
 
   const handleUnblockWallet = async (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -185,7 +183,7 @@ export default function Home() {
       console.error("Error Unblocking Wallet", e);
     }
     setIsLoading(false);
-    setIsRequireUpdate(true);
+    setNotifyUpdate(!notifyUpdate);
   }
 
   return (
